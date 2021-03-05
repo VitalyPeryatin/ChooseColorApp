@@ -29,17 +29,16 @@ class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        addDoneButtonToNumpadKeyboard()
+        addDoneButton(to: redTextField, greenTextField, blueTextField)
         
         colorView.layer.cornerRadius = 16
         
-        redTextField.delegate = self
-        greenTextField.delegate = self
-        blueTextField.delegate = self
+        [redTextField, greenTextField, blueTextField].forEach { textField in
+            textField.delegate = self
+        }
         
         setupAllSliders()
-        setupAllRgbLabels()
-        setupAllTextFieldValues()
+        
         updateColorView()
     }
     
@@ -83,49 +82,54 @@ class SettingsViewController: UIViewController {
 // MARK: - Initial setup
 extension SettingsViewController {
     
-    private func setupAllRgbLabels() {
-        redLabel.text = String(format: "%.2f", redSlider.value)
-        greenLabel.text = String(format: "%.2f", greenSlider.value)
-        blueLabel.text = String(format: "%.2f", blueSlider.value)
-    }
-    
-    private func setupAllTextFieldValues() {
-        redTextField.text = String(format: "%.2f", redSlider.value)
-        greenTextField.text = String(format: "%.2f", greenSlider.value)
-        blueTextField.text = String(format: "%.2f", blueSlider.value)
-    }
-    
     private func setupAllSliders() {
-        var red:CGFloat = 0
-        var green:CGFloat = 0
-        var blue:CGFloat = 0
+        let color = CIColor(color: resultColor)
         
-        if resultColor.getRed(&red, green: &green, blue: &blue, alpha: nil) {
-            redSlider.setValue(Float(red), animated: true)
-            greenSlider.setValue(Float(green), animated: true)
-            blueSlider.setValue(Float(blue), animated: true)
+        redSlider.setValue(Float(color.red), animated: false)
+        setActualValues(for: redSlider)
+        
+        greenSlider.setValue(Float(color.green), animated: false)
+        setActualValues(for: greenSlider)
+        
+        blueSlider.setValue(Float(color.blue), animated: false)
+        setActualValues(for: blueSlider)
+    }
+    
+    private func setActualValues(for slider: UISlider) {
+        let value = String(format: "%.2f", slider.value)
+        
+        switch slider {
+        case redSlider:
+            redLabel.text = value
+            redTextField.text = value
+        case greenSlider:
+            greenLabel.text = value
+            greenTextField.text = value
+        case blueSlider:
+            blueLabel.text = value
+            blueTextField.text = value
+        default:
+            break
         }
     }
 }
 
 // MARK: - UITextField delegates
 extension SettingsViewController: UITextFieldDelegate {
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         let colorComponentValue = extractValidColorComponentValue(for: textField)
-        let colorComponentFormatted = String(format: "%.2f", colorComponentValue)
+        
         switch textField {
         case redTextField:
-            redSlider.value = colorComponentValue
-            redLabel.text = colorComponentFormatted
-            redTextField.text = colorComponentFormatted
+            redSlider.setValue(colorComponentValue, animated: true)
+            setActualValues(for: redSlider)
         case greenTextField:
-            greenSlider.value = colorComponentValue
-            greenLabel.text = colorComponentFormatted
-            greenTextField.text = colorComponentFormatted
+            greenSlider.setValue(colorComponentValue, animated: true)
+            setActualValues(for: greenSlider)
         case blueTextField:
-            blueSlider.value = colorComponentValue
-            blueLabel.text = colorComponentFormatted
-            blueTextField.text = colorComponentFormatted
+            blueSlider.setValue(colorComponentValue, animated: true)
+            setActualValues(for: blueSlider)
         default:
             break
         }
@@ -147,17 +151,27 @@ extension SettingsViewController {
         view.endEditing(true)
     }
     
-    private func addDoneButtonToNumpadKeyboard() {
+    private func addDoneButton(to textFields: UITextField...) {
         let keyboardToolbar = UIToolbar()
         keyboardToolbar.sizeToFit()
-        let flexBarButton = UIBarButtonItem(barButtonSystemItem: .flexibleSpace,
-            target: nil, action: nil)
-        let doneBarButton = UIBarButtonItem(barButtonSystemItem: .done,
-            target: view, action: #selector(UIView.endEditing(_:)))
+        
+        let flexBarButton = UIBarButtonItem(
+            barButtonSystemItem: .flexibleSpace,
+            target: nil,
+            action: nil
+        )
+        
+        let doneBarButton = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: view,
+            action: #selector(UIView.endEditing(_:))
+        )
+        
         keyboardToolbar.items = [flexBarButton, doneBarButton]
-        redTextField.inputAccessoryView = keyboardToolbar
-        greenTextField.inputAccessoryView = keyboardToolbar
-        blueTextField.inputAccessoryView = keyboardToolbar
+        
+        for textField in textFields {
+            textField.inputAccessoryView = keyboardToolbar
+        }
     }
 }
 
